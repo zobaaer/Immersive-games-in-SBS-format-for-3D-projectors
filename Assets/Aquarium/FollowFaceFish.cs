@@ -10,7 +10,7 @@ public class FollowFaceFish : MonoBehaviour
     public Transform fishBank;
 
     [Header("Calibration Files")]
-    public string coordFolder = @"C:\Users\ahmd\Documents\SBS Game Python";
+    public string coordFolder = "Tracking_for_SBS_Python";
     public string currentFile = "current_coords.txt";
     public string leftFile = "left_coords.txt";
     public string rightFile = "right_coords.txt";
@@ -28,8 +28,14 @@ public class FollowFaceFish : MonoBehaviour
 
     private Vector3 initialPosition; // Store the initial position of the fish bank
 
+    private Vector3 targetCoord3D;
+    private Vector3 currentCoord3D;
+
     void Start()
     {
+        // Make coordFolder relative to the application's data path
+        coordFolder = Path.Combine(Application.dataPath, "..", coordFolder);
+
         // Save the initial position of the fish bank
         if (fishBank != null)
         {
@@ -64,41 +70,43 @@ public class FollowFaceFish : MonoBehaviour
         if (!calibrated || fishBank == null)
             return;
 
-        Vector2 newCoord = ReadCoord(currentFile);
+        Vector3 newCoord3D = ReadCoord3D(currentFile);
 
         // Only update if the file has changed
-        if (newCoord != targetCoord)
+        if (newCoord3D != targetCoord3D)
         {
-            targetCoord = newCoord;
+            targetCoord3D = newCoord3D;
         }
 
-        // Smoothly interpolate currentCoord towards targetCoord
-        currentCoord = Vector2.Lerp(currentCoord, targetCoord, Time.deltaTime * smoothSpeed);
+        // Smoothly interpolate currentCoord3D towards targetCoord3D
+        currentCoord3D = Vector3.Lerp(currentCoord3D, targetCoord3D, Time.deltaTime * smoothSpeed);
 
         // Log the current coordinates to the console
-        Debug.Log($"Current Coordinates: {currentCoord}");
+        Debug.Log($"Current Coordinates: {currentCoord3D}");
 
-        // Calculate the center of the calibration area
+        // Calculate the center of the calibration area (XY only)
         Vector2 centerCoord = new Vector2(
             (leftCoord.x + rightCoord.x) / 2,
             (topCoord.y + bottomCoord.y) / 2
         );
 
-        // Calculate offsets based on the difference between currentCoord and centerCoord
-        Vector2 offset = currentCoord - centerCoord;
-
-        // Normalize the offsets to a range of -1 to 1
+        // Normalize the offsets to a range of -1 to 1 (XY only)
         Vector2 normalizedOffset = new Vector2(
-            -(Mathf.InverseLerp(leftCoord.x, rightCoord.x, currentCoord.x) - 0.5f), // Negate X to fix left/right inversion
-            -(Mathf.InverseLerp(topCoord.y, bottomCoord.y, currentCoord.y) - 0.5f) // Negate Y to fix up/down inversion
+            -(Mathf.InverseLerp(leftCoord.x, rightCoord.x, currentCoord3D.x) - 0.5f),
+            -(Mathf.InverseLerp(topCoord.y, bottomCoord.y, currentCoord3D.y) - 0.5f)
         );
 
         // Map the normalized offsets to the desired range
-        float mappedX = Mathf.Lerp(-50, 50, normalizedOffset.x + 0.5f); // Map x to -50 to 50
-        float mappedY = Mathf.Lerp(-80, 50, normalizedOffset.y + 0.5f);   // Map y to 0 to 50
+        float mappedX = Mathf.Lerp(-50, 50, normalizedOffset.x + 0.5f); 
+        float mappedY = Mathf.Lerp(-100, 50, normalizedOffset.y + 0.5f);
+
+        // Map depth (Z): adjust these values as needed for your scene
+        float minDepth = 114f;   // Closest
+        float maxDepth = 60f; // Furthest
+        float mappedZ = Mathf.Lerp(100, -100, Mathf.InverseLerp(minDepth, maxDepth, currentCoord3D.z));
 
         // Apply the offsets to the fish bank's position
-        Vector3 newPosition = initialPosition + new Vector3(mappedX, mappedY, 0);
+        Vector3 newPosition = initialPosition + new Vector3(mappedX, mappedY, mappedZ);
         fishBank.position = Vector3.Lerp(fishBank.position, newPosition, Time.deltaTime * smoothSpeed);
     }
 
@@ -129,5 +137,35 @@ public class FollowFaceFish : MonoBehaviour
             Debug.LogError($"Error reading coordinates: {ex.Message}");
         }
         return targetCoord;
+    }
+
+    Vector3 ReadCoord3D(string fileName)
+    {
+        string path = Path.Combine(coordFolder, fileName);
+        if (!File.Exists(path))
+            return targetCoord3D;
+
+        try
+        {
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (StreamReader reader = new StreamReader(fs))
+            {
+                string content = reader.ReadToEnd();
+                string[] values = content.Split(',');
+
+                if (values.Length >= 3)
+                {
+                    float x = float.Parse(values[0]);
+                    float y = float.Parse(values[1]);
+                    float z = float.Parse(values[2]);
+                    return new Vector3(x, y, z);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error reading coordinates: {ex.Message}");
+        }
+        return targetCoord3D;
     }
 }

@@ -371,7 +371,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fishBank: {fileID: 1043019456}
-  coordFolder: C:\Users\ahmd\Documents\SBS Game Python
+  coordFolder: C:\Users\ahmd\Documents\Immersive-games-in-SBS-format-for-3D-projectors\Tracking_for_SBS_Python
   currentFile: current_coords.txt
   leftFile: left_coords.txt
   rightFile: right_coords.txt

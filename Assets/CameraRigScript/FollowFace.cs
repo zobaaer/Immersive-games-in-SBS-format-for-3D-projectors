@@ -20,6 +20,13 @@ public class FollowFace : MonoBehaviour
     [Header("Smoothing")]
     public float smoothSpeed = 5f;
 
+    [Header("Rotation Mapping")]
+    public float minYaw = -45f;
+    public float maxYaw = 45f;
+    public float minPitch = 0f;
+    public float maxPitch = 30f;
+    public float pitchOffset = 10f;
+
     private Vector2 leftCoord, rightCoord, topCoord, bottomCoord;
     private bool calibrated = false;
 
@@ -27,6 +34,9 @@ public class FollowFace : MonoBehaviour
     private Vector2 currentCoord;
 
     private Quaternion initialRotation; // Store the initial rotation of the camera rig
+
+    private float lastDetectionTime = 0f;
+    public float detectionTimeout = 1.0f; // seconds before fallback to neutral
 
     void Start()
     {
@@ -70,6 +80,16 @@ public class FollowFace : MonoBehaviour
         if (newCoord != targetCoord)
         {
             targetCoord = newCoord;
+            lastDetectionTime = Time.time;
+        }
+
+        // If detection is lost for too long, return to center
+        if (Time.time - lastDetectionTime > detectionTimeout)
+        {
+            targetCoord = new Vector2(
+                (leftCoord.x + rightCoord.x) / 2,
+                (topCoord.y + bottomCoord.y) / 2
+            );
         }
 
         // Smoothly interpolate currentCoord towards targetCoord
@@ -93,9 +113,12 @@ public class FollowFace : MonoBehaviour
             Mathf.InverseLerp(topCoord.y, bottomCoord.y, currentCoord.y) - 0.5f
         );
 
-        // Map the normalized offsets to rotation angles
-        float yaw = Mathf.Lerp(-45, 45, normalizedOffset.x + 0.5f);   // -45 to 45 degrees
-        float pitch = Mathf.Lerp(-30, 30, normalizedOffset.y + 0.5f); // -30 to 30 degrees
+        // Map the normalized offsets to rotation angles using public fields
+        float yaw = Mathf.Lerp(minYaw, maxYaw, normalizedOffset.x + 0.5f);
+        float pitch = Mathf.Lerp(minPitch, maxPitch, normalizedOffset.y + 0.5f);
+
+        // Add a pitch offset to correct the camera looking too down or too up
+        pitch += pitchOffset;
 
         // Apply the rotation offsets to the camera rig based on the initial rotation
         cameraRig.localRotation = initialRotation * Quaternion.Euler(pitch, yaw, 0);
@@ -137,5 +160,14 @@ public class FollowFace : MonoBehaviour
         // Map coord.y from topCoord.y - bottomCoord.y to 0-1
         float y = Mathf.InverseLerp(topCoord.y, bottomCoord.y, coord.y);
         return new Vector2(x, y);
+    }
+
+    // Helper to check if a coordinate is valid (not zero and within calibration bounds)
+    private bool IsValidCoord(Vector2 coord)
+    {
+        // You can adjust this logic based on your detection system's behavior
+        return
+            coord.x >= leftCoord.x && coord.x <= rightCoord.x &&
+            coord.y >= topCoord.y && coord.y <= bottomCoord.y;
     }
 }
