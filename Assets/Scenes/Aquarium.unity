@@ -377,7 +377,15 @@ MonoBehaviour:
   rightFile: right_coords.txt
   topFile: top_coords.txt
   bottomFile: bottom_coords.txt
-  smoothSpeed: 1
+  smoothSpeed: 0.5
+  xRangeMin: -50
+  xRangeMax: 80
+  yRangeMin: -20
+  yRangeMax: 80
+  zRangeMin: 30
+  zRangeMax: 300
+  minDepth: 120
+  maxDepth: 180
 --- !u!1 &1399233265
 GameObject:
   m_ObjectHideFlags: 0
