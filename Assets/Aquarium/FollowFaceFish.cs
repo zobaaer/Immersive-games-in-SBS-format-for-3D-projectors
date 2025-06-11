@@ -20,6 +20,16 @@ public class FollowFaceFish : MonoBehaviour
     [Header("Smoothing")]
     public float smoothSpeed = 5f;
 
+    [Header("Fish Movement Mapping")]
+    public float xRangeMin = -50f;
+    public float xRangeMax = 50f;
+    public float yRangeMin = -100f;
+    public float yRangeMax = 50f;
+    public float zRangeMin = 0f;   
+    public float zRangeMax = 100;  
+    public float minDepth = 80f;     // Furthest detected
+    public float maxDepth = 210f;    // Closest detected
+
     private Vector2 leftCoord, rightCoord, topCoord, bottomCoord;
     private bool calibrated = false;
 
@@ -96,17 +106,16 @@ public class FollowFaceFish : MonoBehaviour
             -(Mathf.InverseLerp(topCoord.y, bottomCoord.y, currentCoord3D.y) - 0.5f)
         );
 
-        // Map the normalized offsets to the desired range
-        float mappedX = Mathf.Lerp(-50, 50, normalizedOffset.x + 0.5f); 
-        float mappedY = Mathf.Lerp(-100, 50, normalizedOffset.y + 0.5f);
+        // Map the normalized offsets to the desired range using public variables
+        float mappedX = Mathf.Lerp(xRangeMin, xRangeMax, normalizedOffset.x + 0.5f); 
+        float mappedY = Mathf.Lerp(yRangeMin, yRangeMax, normalizedOffset.y + 0.5f);
 
-        // Map depth (Z): adjust these values as needed for your scene
-        float minDepth = 114f;   // Closest
-        float maxDepth = 60f; // Furthest
-        float mappedZ = Mathf.Lerp(100, -100, Mathf.InverseLerp(minDepth, maxDepth, currentCoord3D.z));
+        // Map depth (Z) using public variables
+        float t = Mathf.InverseLerp(minDepth, maxDepth, Mathf.Clamp(currentCoord3D.z, minDepth, maxDepth));
+        float mappedZ = Mathf.Lerp(zRangeMin, zRangeMax, t);
 
         // Apply the offsets to the fish bank's position
-        Vector3 newPosition = initialPosition + new Vector3(mappedX, mappedY, mappedZ);
+        Vector3 newPosition = new Vector3(initialPosition.x + mappedX, initialPosition.y + mappedY, mappedZ);
         fishBank.position = Vector3.Lerp(fishBank.position, newPosition, Time.deltaTime * smoothSpeed);
     }
 

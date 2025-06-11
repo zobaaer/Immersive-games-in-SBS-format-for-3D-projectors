@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Immersive-games-in-SBS-format-for-3D-projectors.sln"
+    "dotnet.defaultSolution": "SBS GAME.sln"
 }
