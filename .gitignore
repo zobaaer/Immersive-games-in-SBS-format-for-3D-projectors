@@ -70,3 +70,7 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+Tracking_for_SBS_Python/bottom_coords.txt
+Tracking_for_SBS_Python/current_coords.txt
+Tracking_for_SBS_Python/right_coords.txt
+Tracking_for_SBS_Python/top_coords.txt
